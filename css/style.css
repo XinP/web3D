@@ -1,0 +1,124 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+    background: #000;
+}
+
+#container {
+    width: 100vw;
+    height: 100vh;
+}
+
+#controls {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 20px;
+    border-radius: 8px;
+    color: white;
+    min-width: 280px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.control-group {
+    margin-bottom: 15px;
+}
+
+.control-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+}
+
+.control-group input {
+    width: 100%;
+    padding: 5px;
+    border: none;
+    border-radius: 4px;
+}
+
+.control-group input[type="range"] {
+    background: #333;
+}
+
+.control-group input[type="color"] {
+    height: 30px;
+    cursor: pointer;
+}
+
+
+/* 新增：视角按钮样式 */
+
+.view-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.view-buttons button {
+    padding: 8px 4px;
+    background: #444;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.view-buttons button:hover {
+    background: #666;
+}
+
+
+/* 新增：模型列表样式 */
+
+.model-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.model-item span {
+    flex: 1;
+    margin-right: 10px;
+}
+
+.model-item button {
+    padding: 4px 8px;
+    margin-left: 4px;
+    background: #555;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.model-item button:hover {
+    background: #777;
+}
+
+#controls button {
+    width: 100%;
+    padding: 8px;
+    background: #007acc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+#controls button:hover {
+    background: #005a9e;
+}
