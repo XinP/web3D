@@ -11,12 +11,12 @@ class CameraManager {
     init() {
         // 创建透视摄像机
         this.camera = new THREE.PerspectiveCamera(
-            75, 
-            window.innerWidth / window.innerHeight, 
-            0.1, 
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
             1000
         );
-        
+
         // 设置摄像机位置
         this.camera.position.set(10, 10, 10);
         this.camera.lookAt(0, 0, 0);
@@ -28,12 +28,12 @@ class CameraManager {
         this.controls.enableZoom = true;
         this.controls.enablePan = true;
         this.controls.enableRotate = true;
-        
+
         // 设置控制器限制
         this.controls.maxDistance = 50;
         this.controls.minDistance = 2;
-        this.controls.maxPolarAngle = Math.PI / 2;
-        
+        this.controls.maxPolarAngle = Math.PI;
+
         // 初始化预设视角
         this.initViewPresets();
     }
@@ -71,35 +71,35 @@ class CameraManager {
     animateToPosition(targetPosition, targetLookAt, duration = 1000) {
         const startPosition = this.camera.position.clone();
         const startTarget = this.controls.target.clone();
-        
+
         const startTime = Date.now();
-        
+
         const animate = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / duration, 1);
-            
+
             // 使用缓动函数
             const easeProgress = this.easeInOutCubic(progress);
-            
+
             // 插值位置
-            this.camera.position.lerpVectors(startPosition, 
-                new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z), 
+            this.camera.position.lerpVectors(startPosition,
+                new THREE.Vector3(targetPosition.x, targetPosition.y, targetPosition.z),
                 easeProgress
             );
-            
+
             // 插值目标
-            this.controls.target.lerpVectors(startTarget, 
-                new THREE.Vector3(targetLookAt.x, targetLookAt.y, targetLookAt.z), 
+            this.controls.target.lerpVectors(startTarget,
+                new THREE.Vector3(targetLookAt.x, targetLookAt.y, targetLookAt.z),
                 easeProgress
             );
-            
+
             this.controls.update();
-            
+
             if (progress < 1) {
                 requestAnimationFrame(animate);
             }
         };
-        
+
         animate();
     }
 

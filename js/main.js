@@ -12,9 +12,9 @@ class ThreeJSApp {
         // 初始化各个管理器
         this.sceneManager = new SceneManager();
         this.cameraManager = new CameraManager(this.sceneManager.scene, this.sceneManager.renderer);
-        this.lightingManager = new LightingManager(this.sceneManager.scene);
+        this.lightingManager = new LightingManager(this.sceneManager.scene, this.sceneManager.renderer);
         this.modelManager = new ModelManager(this.sceneManager.scene);
-        
+
         // 初始化API接口
         this.api = new ThreeJSAPI(this);
 
@@ -38,7 +38,7 @@ class ThreeJSApp {
     bindViewControls() {
         // 添加视角切换按钮到控制面板
         const controlsDiv = document.getElementById('controls');
-        
+
         const viewControlsHTML = `
             <div class="control-group">
                 <label>摄像机视角:</label>
@@ -58,9 +58,9 @@ class ThreeJSApp {
                 <button onclick="window.app.showLoadModelDialog()">加载CDN模型</button>
             </div>
         `;
-        
+
         controlsDiv.insertAdjacentHTML('beforeend', viewControlsHTML);
-        
+
         // 更新模型列表
         this.updateModelList();
     }
@@ -69,7 +69,7 @@ class ThreeJSApp {
     updateModelList() {
         const modelListDiv = document.getElementById('modelList');
         const models = this.modelManager.getAllModels();
-        
+
         modelListDiv.innerHTML = models.map(model => `
             <div class="model-item">
                 <span>${model.id}</span>
@@ -85,7 +85,7 @@ class ThreeJSApp {
     showLoadModelDialog() {
         const cdnUrl = prompt('请输入CDN模型URL:');
         const modelId = prompt('请输入模型ID:');
-        
+
         if (cdnUrl && modelId) {
             this.loadModelFromCDN(cdnUrl, modelId)
                 .then(() => this.updateModelList())
@@ -150,18 +150,18 @@ class ThreeJSApp {
 
     animate() {
         requestAnimationFrame(this.animate.bind(this));
-        
+
         // 更新控制器
         this.cameraManager.update();
-        
+
         // 渲染场景
         this.sceneManager.render(this.cameraManager.camera);
     }
 
-    // 加载FBX模型的公共方法
+    // 加载GLTF模型的公共方法
     async loadModel(path, position) {
         try {
-            const model = await this.modelManager.loadFBXModel(path, position);
+            const model = await this.modelManager.loadGLTFModel(path, position);
             console.log('模型加载成功:', path);
             return model;
         } catch (error) {
@@ -173,7 +173,8 @@ class ThreeJSApp {
 // 应用启动
 window.addEventListener('DOMContentLoaded', () => {
     window.app = new ThreeJSApp();
-    
+
     // 示例：加载FBX模型（需要将模型文件放在models文件夹中）
-    // window.app.loadModel('models/your-model.fbx', { x: 0, y: 0, z: 0 });
+    window.app.loadModel('http://localhost:8080/script/demo/output/Atlas_GPe1_L.glb', { x: 0, y: 0, z: 0 });
+    window.app.loadModel('http://localhost:8080/script/demo/output/Atlas_GPe1_R.glb', { x: 0, y: 0, z: 0 });
 });

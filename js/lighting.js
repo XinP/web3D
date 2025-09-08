@@ -1,8 +1,9 @@
 class LightingManager {
-    constructor(scene) {
+    constructor(scene, renderer) {
         this.scene = scene;
         this.ambientLight = null;
         this.directionalLight = null;
+        this.renderer = renderer;
         this.init();
     }
 
@@ -13,7 +14,7 @@ class LightingManager {
 
         // 方向光（主光源）
         this.directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        this.directionalLight.position.set(-0.086, 0.5214, -0.8489);
+        this.directionalLight.position.set(0.2837, 0.3385, -0.8972);
         this.directionalLight.castShadow = true;
 
         // 设置阴影属性
@@ -30,16 +31,29 @@ class LightingManager {
 
         // 方向光
         const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1);
-        this.directionalLight.position.set(0.0866, -0.5214, 0.8489);
+        this.directionalLight.position.set(-0.2837, -0.3385, 0.8972);
         this.directionalLight.castShadow = true;
 
         this.scene.add(directionalLight1);
 
         const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1);
-        this.directionalLight.position.set(0.0000, -0.8521, -0.5233);
+        this.directionalLight.position.set(0.0000, -0.9356, -0.3530);
         this.directionalLight.castShadow = true;
-
         this.scene.add(directionalLight2);
+
+        const directionalLight3 = new THREE.DirectionalLight(0xffffff, 1);
+        this.directionalLight.position.set(0.0000, 0.9356, 0.3530);
+        this.directionalLight.castShadow = true;
+        this.scene.add(directionalLight3);
+
+        //const renderer = this.scene.renderer;
+        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 1;
+        container.appendChild(this.renderer.domElement);
+
+
+        this.scene.background = new THREE.Color(0xbbbbbb);
+        this.scene.environment = RoomEnvironment.generatePMREM(this.renderer);
     }
 
     setAmbientIntensity(intensity) {

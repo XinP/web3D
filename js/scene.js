@@ -16,7 +16,7 @@ class SceneManager {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        
+
         // 添加到DOM
         document.getElementById('container').appendChild(this.renderer.domElement);
 
