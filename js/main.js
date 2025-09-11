@@ -175,6 +175,9 @@ window.addEventListener('DOMContentLoaded', () => {
     window.app = new ThreeJSApp();
 
     // 示例：加载FBX模型（需要将模型文件放在models文件夹中）
-    window.app.loadModel('http://localhost:8080/script/demo/output/Atlas_GPe1_L.glb', { x: 0, y: 0, z: 0 });
-    window.app.loadModel('http://localhost:8080/script/demo/output/Atlas_GPe1_R.glb', { x: 0, y: 0, z: 0 });
+    //window.app.loadModel('http://localhost:8080/script/demo/output/Atlas_GPe1_L.glb', { x: 0, y: 0, z: 0 });
+    window.app.modelManager.downloadAndLoadModelsFromZip(
+        "https://pins-app-resources.oss-cn-qingdao.aliyuncs.com/nucleus_elec_display/0_tablet_upload.zip"
+    );
+
 });

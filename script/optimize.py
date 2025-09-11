@@ -13,6 +13,7 @@ TAUBIN_ITERS = 20          # Taubin 平滑迭代次数（0 表示不做）
 TAUBIN_LAMB = 0.5
 TAUBIN_MU = -0.53
 ENSURE_WATERTIGHT = True   # 是否在导出前尝试填洞/修复以保证 watertight
+FIX_COORDINATE = True
 # -----------------------------------------
 
 def _compute_digits_for_weld(mesh_diag, weld_distance):
@@ -31,7 +32,8 @@ def optimize_single_mesh(path,
                          taubin_iters=TAUBIN_ITERS,
                          taubin_lamb=TAUBIN_LAMB,
                          taubin_mu=TAUBIN_MU,
-                         ensure_watertight=ENSURE_WATERTIGHT):
+                         ensure_watertight=ENSURE_WATERTIGHT,
+                         fix_coordinate=FIX_COORDINATE):
     """
     处理单个文件（Open3D -> Trimesh），并返回处理后的 trimesh.Trimesh 对象。
     """
@@ -65,14 +67,13 @@ def optimize_single_mesh(path,
         # merge_close_vertices 返回一个新的 mesh（某些版本）
         mesh_o3d = mesh_o3d.merge_close_vertices(merge_distance)
     except Exception:
-        # 如果该方法不可用，尝试 remove_duplicated_vertices / remove_unreferenced_vertices
         try:
             mesh_o3d.remove_duplicated_vertices()
             mesh_o3d.remove_unreferenced_vertices()
         except Exception:
             pass
 
-    # ---------------- 3) 简化（优先使用 target_faces） ----------------
+    # ---------------- 3) 简化 ----------------
     curr_faces = len(np.asarray(mesh_o3d.triangles))
     if simplify_target_faces is not None and simplify_target_faces > 0 and curr_faces > simplify_target_faces:
         try:
@@ -92,11 +93,11 @@ def optimize_single_mesh(path,
                 mesh_o3d = mesh_o3d.simplify_vertex_clustering(voxel_size=voxel_size,
                                                                contraction=o3d.geometry.SimplificationContraction.Average)
 
-    # ---------------- 4) 在 Open3D 端计算法线（先算一遍，便于观察） ----------------
+    # ---------------- 4) 在 Open3D 端计算法线 ----------------
     mesh_o3d.compute_triangle_normals()
     mesh_o3d.compute_vertex_normals()
 
-    # ---------------- 5) 转为 Trimesh 进一步处理（Taubin） ----------------
+    # ---------------- 5) 转为 Trimesh 进一步处理 ----------------
     verts = np.asarray(mesh_o3d.vertices)
     faces = np.asarray(mesh_o3d.triangles)
     mesh_tm = trimesh.Trimesh(vertices=verts, faces=faces, process=False)
@@ -156,6 +157,12 @@ def optimize_single_mesh(path,
         mesh_tm.vertices += delta
     except Exception:
         pass
+
+    if fix_coordinate:
+        R = trimesh.transformations.rotation_matrix(
+            np.radians(-90), [1, 0, 0]
+        )
+        mesh_tm.apply_transform(R)
 
     # 强制触发 normals 的最终计算（确保导出时包含）
     _ = mesh_tm.vertex_normals

@@ -51,6 +51,120 @@ class ModelManager {
         this.models.push(plane);
     }
 
+    parseColor(txtContent) {
+        const lines = txtContent.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        const colorMap = {};
+
+        const floatRe = /[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?/g;
+
+        for (const line of lines) {
+            const idx = line.indexOf(':');
+            if (idx === -1) continue;
+            const name = line.substring(0, idx).trim(); // e.g. "GPe1" 或 "STN2 motor"
+
+            // 取冒号右侧的数字
+            const rest = line.substring(idx + 1);
+            const nums = rest.match(floatRe);
+            if (!nums || nums.length < 3) continue;
+
+            const r = Math.round(parseFloat(nums[0]) * 255);
+            const g = Math.round(parseFloat(nums[1]) * 255);
+            const b = Math.round(parseFloat(nums[2]) * 255);
+
+            // 构造 0xRRGGBB（无符号）
+            const hex = ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff);
+            colorMap[name] = hex >>> 0;
+        }
+        return colorMap;
+    }
+
+    extractKeyFromFilename(filename) {
+        const base = filename.split(/[/\\]/).pop();
+        const match = base.match(/^Atlas_(.+?)(?:_[LR])?\.glb$/i);
+        return match ? match[1] : null;
+    }
+
+    async downloadAndLoadModelsFromZip(url, position = { x: 0, y: 0, z: 0 }) {
+        try {
+            // 1. 下载 zip
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const arrayBuffer = await response.arrayBuffer();
+
+            // 2. 解压
+            const zip = await JSZip.loadAsync(arrayBuffer);
+
+            // 3. 找到 config.json
+            let configFile = null;
+            zip.forEach((relativePath, zipEntry) => {
+                if (relativePath.toLowerCase().endsWith("config.json")) {
+                    configFile = zipEntry;
+                }
+            });
+            if (!configFile) throw new Error("zip中没有找到 config.json");
+
+            // 4. 读取 JSON
+            const configText = await configFile.async("string");
+            const config = JSON.parse(configText);
+
+            if (!config.folders || !Array.isArray(config.folders)) {
+                throw new Error("config.json 格式不正确，应包含 folders 数组");
+            }
+
+            // 5. 遍历指定的文件夹，收集 glb 文件
+            const glbEntries = [];
+            zip.forEach((relativePath, zipEntry) => {
+                if (relativePath.toLowerCase().endsWith(".glb")) {
+                    for (const folder of config.folders) {
+                        if (relativePath.startsWith(folder)) {
+                            glbEntries.push({ path: relativePath, entry: zipEntry });
+                            break;
+                        }
+                    }
+                }
+            });
+            if (glbEntries.length === 0) {
+                console.warn("未找到任何符合条件的 glb 文件");
+                return [];
+            }
+
+            // 读取color txt 文件
+            const txtContent = await zip.file("AtlasColor.txt").async("string");
+            const colorMap = this.parseColor(txtContent);
+
+            console.log(`colormap is ${JSON.stringify(colorMap)}`);
+
+
+            // 7. 加载所有 glb
+            const loadedModels = [];
+            for (let i = 0; i < glbEntries.length; i++) {
+                const { path, entry } = glbEntries[i];
+
+                const glbBlob = await entry.async("blob");
+                const objectUrl = URL.createObjectURL(glbBlob);
+                console.log(`path is ${path}`);
+                console.log(`entry is ${entry}`);
+
+                const modelId = this.extractKeyFromFilename(path);
+                console.log(`modelId is ${modelId}`);
+
+                const color = colorMap[modelId] || 0x070707;
+                const model = await this.loadGLTFFromBlob(objectUrl, modelId, color, position);
+
+                URL.revokeObjectURL(objectUrl);
+
+                loadedModels.push({ id: modelId, path, model });
+            }
+
+            console.log(`从ZIP加载完成，共 ${loadedModels.length} 个模型`);
+            return loadedModels;
+
+        } catch (error) {
+            console.error("从ZIP加载模型失败:", error);
+            throw error;
+        }
+    }
+
     loadGLTFModel(path, position = { x: 0, y: 0, z: 0 }, scale = 0.5) {
         return new Promise((resolve, reject) => {
             this.loader.load(
@@ -72,8 +186,8 @@ class ModelManager {
                                 color: 0xffffff,
                                 emissive: 0x000000,
                                 emissiveIntensity: 0,
-                                transparent: false,
-                                opacity: 1.0,
+                                transparent: true,
+                                opacity: 0.9,
                                 roughness: 0.7,
                                 metalness: 0.0,
                                 side: THREE.DoubleSide,
@@ -158,7 +272,7 @@ class ModelManager {
     }
 
     // 新增：从Blob加载GLTF模型
-    loadGLTFFromBlob(blobUrl, modelId, position = { x: 0, y: 0, z: 0 }) {
+    loadGLTFFromBlob(blobUrl, modelId, color = 0xffffff, position = { x: 0, y: 0, z: 0 }) {
         return new Promise((resolve, reject) => {
             this.loader.load(
                 blobUrl,
@@ -172,12 +286,16 @@ class ModelManager {
                     // 遍历并设置材质
                     object.traverse((child) => {
                         if (child.isMesh) {
-                            const lambertMaterial = new THREE.MeshLambertMaterial({
-                                color: 0xffffff,
+                            const lambertMaterial = new THREE.MeshStandardMaterial({
+                                color: color,
                                 emissive: 0x000000,
                                 emissiveIntensity: 0,
-                                transparent: false,
-                                opacity: 1.0
+                                transparent: true,
+                                opacity: 0.9,
+                                roughness: 0.7,
+                                metalness: 0.0,
+                                envMapIntensity: 1.5,
+                                side: THREE.DoubleSide
                             });
 
                             child.material = lambertMaterial;

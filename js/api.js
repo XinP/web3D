@@ -7,7 +7,7 @@ class ThreeJSAPI {
     setupEventListeners() {
         // 监听外部消息
         window.addEventListener('message', this.handleMessage.bind(this));
-        
+
         // 设置全局API
         window.ThreeJSAPI = {
             // 模型相关
@@ -16,15 +16,15 @@ class ThreeJSAPI {
             removeModel: this.removeModel.bind(this),
             getAllModels: this.getAllModels.bind(this),
             getLoadingStatus: this.getLoadingStatus.bind(this),
-            
+
             // 摄像机相关
             setView: this.setView.bind(this),
             setCustomView: this.setCustomView.bind(this),
             getCameraState: this.getCameraState.bind(this),
-            
+
             // 材质相关
             updateMaterialProperties: this.updateMaterialProperties.bind(this),
-            
+
             // 光照相关
             setAmbientIntensity: this.setAmbientIntensity.bind(this),
             setDirectionalIntensity: this.setDirectionalIntensity.bind(this)
@@ -33,8 +33,22 @@ class ThreeJSAPI {
 
     handleMessage(event) {
         try {
-            const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-            
+            let data = event.data;
+            if (typeof data === 'string') {
+                data = data.trim();
+                if (data.startsWith('{') || data.startsWith('[')) {
+                    try {
+                        data = JSON.parse(data);
+                    } catch (e) {
+                        console.warn('收到的字符串不是合法JSON，跳过:', data);
+                        return;
+                    }
+                } else {
+                    // 普通字符串消息（比如 setImmediate），直接忽略
+                    return;
+                }
+            }
+
             if (data.type && data.type.startsWith('threejs_')) {
                 this.processCommand(data);
             }
@@ -51,8 +65,8 @@ class ThreeJSAPI {
             switch (type) {
                 case 'threejs_load_model':
                     result.data = await this.loadModelFromCDN(
-                        payload.cdnUrl, 
-                        payload.modelId, 
+                        payload.cdnUrl,
+                        payload.modelId,
                         payload.position
                     );
                     result.success = true;
@@ -60,14 +74,14 @@ class ThreeJSAPI {
 
                 case 'threejs_set_model_visibility':
                     result.success = this.setModelVisibility(
-                        payload.modelId, 
+                        payload.modelId,
                         payload.visible
                     );
                     break;
 
                 case 'threejs_set_view':
                     result.success = this.setView(
-                        payload.viewName, 
+                        payload.viewName,
                         payload.duration
                     );
                     break;
